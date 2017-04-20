@@ -5,15 +5,17 @@
 
 import random, time, pygame, sys
 from pygame.locals import *
+import ANN
 
 FPS = 25
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
 BOXSIZE = 20
-BOARDWIDTH = 10
+BOARDWIDTH = 10 # 10
 BOARDHEIGHT = 20
 BLANK = '.'
 
+SHAPES = {'S' : 0, 'Z' : 1, 'I' : 2, 'J' : 3, 'L' : 4, 'T' : 5, 'O' : 6};
 MOVESIDEWAYSFREQ = 0.15
 MOVEDOWNFREQ = 0.1
 
@@ -155,7 +157,7 @@ PIECES = {'S': S_SHAPE_TEMPLATE,
           'T': T_SHAPE_TEMPLATE}
 
 
-def main():
+def main(brain):
     global FPSCLOCK, DISPLAYSURF, BASICFONT, BIGFONT
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
@@ -171,12 +173,12 @@ def main():
         # else:
             # pygame.mixer.music.load('tetrisc.mid')
         # pygame.mixer.music.play(-1, 0.0)
-        runGame()
-        pygame.mixer.music.stop()
+        runGame(brain)
+        #pygame.mixer.music.stop()
         showTextScreen('Game Over')
 
 
-def runGame():
+def runGame(brain):
     # setup variables for the start of the game
     board = getBlankBoard()
     lastMoveDownTime = time.time()
@@ -198,18 +200,25 @@ def runGame():
             nextPiece = getNewPiece()
             lastFallTime = time.time() # reset lastFallTime
 
+            # start of debugging
+            print "this is board state:\n"
+            for line in board:
+                print line
+            # end of debugging
             if not isValidPosition(board, fallingPiece):
                 return # can't fit a new piece on the board, so game over
-
+        
         checkForQuit()
+
         for event in pygame.event.get(): # event handling loop
+            #add ann here
             if event.type == KEYUP:
                 if (event.key == K_p):
                     # Pausing the game
                     DISPLAYSURF.fill(BGCOLOR)
-                    pygame.mixer.music.stop()
+                    # pygame.mixer.music.stop()
                     showTextScreen('Paused') # pause until a key press
-                    pygame.mixer.music.play(-1, 0.0)
+                    # pygame.mixer.music.play(-1, 0.0)
                     lastFallTime = time.time()
                     lastMoveDownTime = time.time()
                     lastMoveSidewaysTime = time.time()
@@ -221,6 +230,7 @@ def runGame():
                     movingDown = False
 
             elif event.type == KEYDOWN:
+
                 # moving the piece sideways
                 if (event.key == K_LEFT or event.key == K_a) and isValidPosition(board, fallingPiece, adjX=-1):
                     fallingPiece['x'] -= 1
@@ -262,6 +272,28 @@ def runGame():
                     fallingPiece['y'] += i - 1
 
         # handle moving the piece because of user input
+        
+        inputs = [fallingPiece['x'],fallingPiece['y'], SHAPES[faillingPiece['shape'], failingPiece['rotation']];
+        for r in len(board):
+            for c in len(board[r]):
+                if board[r][c] == '.'
+                    inputs.append(0);
+                else
+                    inputs.append(1);
+
+        outputs = brain.evaluate(inputs);
+        keyPress = getMaxIndex(outputs);
+        if(keyPress == 0): #move up
+            fallingPiece['rotation'] = (fallingPiece['rotation'] + 1) % len(PIECES[fallingPiece['shape']])
+            if not isValidPosition(board, fallingPiece):
+                fallingPiece['rotation'] = (fallingPiece['rotation'] - 1) % len(PIECES[fallingPiece['shape']])
+        elif (keyPress == 1): #move down
+                fallingPiece['y'] += 1
+        elif (keyPress == 2): # move right
+                fallingPiece['x'] += 1
+        else: #move left
+                fallingPiece['x'] -= 1
+
         if (movingLeft or movingRight) and time.time() - lastMoveSidewaysTime > MOVESIDEWAYSFREQ:
             if movingLeft and isValidPosition(board, fallingPiece, adjX=-1):
                 fallingPiece['x'] -= 1
@@ -296,8 +328,17 @@ def runGame():
             drawPiece(fallingPiece)
 
         pygame.display.update()
+        #print score
         FPSCLOCK.tick(FPS)
 
+
+def getMaxIndex(outputs):
+    index = 0;
+    max = output[index];
+    for i in range(len(outputs)):
+        if(outputs[i] > max):
+            index = i;
+    return index;
 
 def makeTextObjs(text, font, color):
     surf = font.render(text, True, color)
@@ -503,4 +544,4 @@ def drawNextPiece(piece):
 
 
 if __name__ == '__main__':
-    main()
+    main(brain)
