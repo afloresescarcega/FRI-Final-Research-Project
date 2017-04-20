@@ -15,7 +15,7 @@ class ANN(object):
         #print weights
         self.hidden_weights = np.array(weights[:num_hidden_weights]).reshape(num_hidden_nodes,num_inputs+1)
         self.output_weights = np.array(weights[num_hidden_weights:]).reshape(num_outputs,num_hidden_nodes+1)
-
+    
     def activation(self,x):
         # x is the net input to the neuron (previously represented as "z" during the class)
         # a is the activation value ( a = activation(z) )

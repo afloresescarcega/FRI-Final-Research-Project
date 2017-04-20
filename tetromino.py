@@ -5,7 +5,8 @@
 
 import random, time, pygame, sys
 from pygame.locals import *
-import ANN
+from ANN import ANN
+import numpy as np
 
 FPS = 25
 WINDOWWIDTH = 640
@@ -273,14 +274,15 @@ def runGame(brain):
 
         # handle moving the piece because of user input
         
-        inputs = [fallingPiece['x'],fallingPiece['y'], SHAPES[faillingPiece['shape'], failingPiece['rotation']];
-        for r in len(board):
-            for c in len(board[r]):
-                if board[r][c] == '.'
+        inputs = [fallingPiece['x'],fallingPiece['y'], SHAPES[fallingPiece['shape']], fallingPiece['rotation']];
+        for r in range(len(board)):
+            for c in range(len(board[r])):
+                if board[r][c] == '.':
                     inputs.append(0);
-                else
+                else:
                     inputs.append(1);
-
+        print inputs
+        print len(inputs)
         outputs = brain.evaluate(inputs);
         keyPress = getMaxIndex(outputs);
         if(keyPress == 0): #move up
@@ -334,9 +336,10 @@ def runGame(brain):
 
 def getMaxIndex(outputs):
     index = 0;
-    max = output[index];
+    max = outputs[index];
     for i in range(len(outputs)):
         if(outputs[i] > max):
+            max = outputs[i];
             index = i;
     return index;
 
@@ -544,4 +547,8 @@ def drawNextPiece(piece):
 
 
 if __name__ == '__main__':
+    numWeights = (204 + 1) * 100 + (100 + 1) * 4
+    weights = np.random.rand(numWeights);
+    print weights
+    brain = ANN(204, 100, 4, weights)
     main(brain)
