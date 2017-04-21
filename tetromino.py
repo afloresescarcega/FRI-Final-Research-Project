@@ -289,12 +289,17 @@ def runGame(brain):
             fallingPiece['rotation'] = (fallingPiece['rotation'] + 1) % len(PIECES[fallingPiece['shape']])
             if not isValidPosition(board, fallingPiece):
                 fallingPiece['rotation'] = (fallingPiece['rotation'] - 1) % len(PIECES[fallingPiece['shape']])
-        elif (keyPress == 1): #move down
+
+        elif (keyPress == 1 and isValidPosition(board, fallingPiece, adjY=1)): #move down
                 fallingPiece['y'] += 1
-        elif (keyPress == 2): # move right
+                lastMoveDownTime = time.time()
+        elif (keyPress == 2 and isValidPosition(board, fallingPiece, adjX=1)): # move right
                 fallingPiece['x'] += 1
+                lastMoveSidewaysTime = time.time()
         else: #move left
-                fallingPiece['x'] -= 1
+                if isValidPosition(board, fallingPiece, adjX=-1)
+                  fallingPiece['x'] -= 1
+                  lastMoveSidewaysTime = time.time()
 
         if (movingLeft or movingRight) and time.time() - lastMoveSidewaysTime > MOVESIDEWAYSFREQ:
             if movingLeft and isValidPosition(board, fallingPiece, adjX=-1):
