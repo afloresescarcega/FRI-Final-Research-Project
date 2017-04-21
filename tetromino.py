@@ -297,7 +297,7 @@ def runGame(brain):
                 fallingPiece['x'] += 1
                 lastMoveSidewaysTime = time.time()
         else: #move left
-                if isValidPosition(board, fallingPiece, adjX=-1)
+                if isValidPosition(board, fallingPiece, adjX=-1):
                   fallingPiece['x'] -= 1
                   lastMoveSidewaysTime = time.time()
 
@@ -552,8 +552,8 @@ def drawNextPiece(piece):
 
 
 if __name__ == '__main__':
-    numWeights = (204 + 1) * 100 + (100 + 1) * 4
+    numWeights = (204 + 1) * 10 + (10 + 1) * 4
     weights = np.random.rand(numWeights);
     print weights
-    brain = ANN(204, 100, 4, weights)
+    brain = ANN(204, 10, 4, weights)
     main(brain)
