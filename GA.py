@@ -20,42 +20,38 @@ toolbox.register("population", tools.initRepeat,list, toolbox.individual, NUM_IN
 
 #Uses a game's score as the fitness
 def eval(individual):
-	return game.getScore(),
+	ann = ANN(NUM_INPUTS, NUM_HIDDEN_NODES, NUM_OUTPUTS, individual)
+	return game.main(ann),
 
 #creates evaluation, mutation, crossover, and selection
 toolbox.register("evaluate", eval)
 toolbox.register("select",tools.selTournament, tournsize = 2)
-toolbox.register("mate", tools.cxBlend, alpha = 1.0)
+toolbox.register("mate", tools.cxTwoPoint)
 toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=.3)
 toolbox.register("map",map)
 
 #Start genetic algorithm
-CXPB, MUTPB, NGEN = 0.5, 0.03, 500
+CXPB, MUTPB, NGEN = 0.5, 0.03, 10
 pop = toolbox.population()
 fits = toolbox.map(toolbox.evaluate,pop)
 
 #Create the computers to play tetris
-for ind in pop:
-	ann = ANN(NUM_INPUTS, NUM_HIDDEN_NODES, NUM_OUTPUTS, ind)
-	#Runs the game to get a score for the individual
-	my_game = game.main(ann)
 
 #Set the fitness for the initial population
 for ind,fit in zip(pop,fits):
 	ind.fitness.values = fit
 	
 for g in range(NGEN):
+	print (g+1)
 	pop = toolbox.select(pop, k=len(pop))
 	for ind in pop:
 		ann = ANN(NUM_INPUTS, NUM_HIDDEN_NODES, NUM_OUTPUTS, ind)
 		#Runs the game to get a score for the individual
-		my_game = game.main(ann)
-		ind.fitness.values = eval
+		
+		ind.fitness.values = game.main(ann),
 	pop = algorithms.varAnd(pop,toolbox,CXPB,MUTPB)
 	fits = toolbox.map(toolbox.evaluate, pop)
 	for ind, fit in zip(pop,fits):
 		ind.fitness.values = fit
 best = tools.selBest(pop,k=1)
 print best
-	
-	
