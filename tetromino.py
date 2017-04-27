@@ -166,9 +166,8 @@ def main(brain):
     BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
     BIGFONT = pygame.font.Font('freesansbold.ttf', 100)
     pygame.display.set_caption('Tetromino')
-
-    score = runGame(brain);
-    return score; 
+    fits = runGame(brain);
+    return fits;
     #while True: # game loop
         # if random.randint(0, 1) == 0:
             # pygame.mixer.music.load('tetrisb.mid')
@@ -192,12 +191,13 @@ def runGame(brain):
     score = 0;
     realScore = 0;
     level, fallFreq = calculateLevelAndFallFreq(score)
-
+    count = 0;
+    frames = 0;
     fallingPiece = getNewPiece()
     nextPiece = getNewPiece()
-
     while True: # game loop
         if fallingPiece == None:
+            count+=1;
             # No falling piece in play, so start a new piece at the top
             fallingPiece = nextPiece
             nextPiece = getNewPiece()
@@ -205,13 +205,14 @@ def runGame(brain):
 
             # start of debugging
             if not isValidPosition(board, fallingPiece):
-                return score;
-        
+                return score,count;
+        else:
+            frames+=1;
         #checkForQuit()
 
         # handle moving the piece because of user input
         
-        inputs = [fallingPiece['x'],fallingPiece['y'], SHAPES[fallingPiece['shape']], fallingPiece['rotation']];
+        inputs = [fallingPiece['x'],fallingPiece['y'], SHAPES[fallingPiece['shape']], fallingPiece['rotation']]
         for r in range(len(board)):
             for c in range(len(board[r])):
                 if board[r][c] == '.':
@@ -221,6 +222,7 @@ def runGame(brain):
         outputs = brain.evaluate(inputs);
         keyPress = getMaxIndex(outputs);
         if(keyPress == 0): #move up
+            keyPress = 5
             fallingPiece['rotation'] = (fallingPiece['rotation'] + 1) % len(PIECES[fallingPiece['shape']])
             if not isValidPosition(board, fallingPiece):
                 fallingPiece['rotation'] = (fallingPiece['rotation'] - 1) % len(PIECES[fallingPiece['shape']])
@@ -231,35 +233,22 @@ def runGame(brain):
         elif (keyPress == 2 and isValidPosition(board, fallingPiece, adjX=1)): # move right
                 fallingPiece['x'] += 1
                 lastMoveSidewaysTime = time.time()
-        else: #move left
-                if isValidPosition(board, fallingPiece, adjX=-1):
+        elif isValidPosition(board, fallingPiece, adjX=-1) and keyPress == 3 : #move left
                   fallingPiece['x'] -= 1
-                  lastMoveSidewaysTime = time.time()
+                  lastMoveSidewaysTime = time.time();
+        else:
+            keyPress = 5;
 
-        if (movingLeft or movingRight) and time.time() - lastMoveSidewaysTime > MOVESIDEWAYSFREQ:
-            if movingLeft and isValidPosition(board, fallingPiece, adjX=-1):
-                fallingPiece['x'] -= 1
-            elif movingRight and isValidPosition(board, fallingPiece, adjX=1):
-                fallingPiece['x'] += 1
-            lastMoveSidewaysTime = time.time()
-
-        if movingDown and time.time() - lastMoveDownTime > MOVEDOWNFREQ and isValidPosition(board, fallingPiece, adjY=1):
+        if (frames % 10 == 0) and keyPress != 1 and isValidPosition(board, fallingPiece, adjY=1) and fallingPiece != None:
+            # piece did not land, just move the piece down
             fallingPiece['y'] += 1
-            lastMoveDownTime = time.time()
 
-        # let the piece fall if it is time to fall
-            # see if the piece has landed
-        if not isValidPosition(board, fallingPiece, adjY=1):
+        if not isValidPosition(board, fallingPiece, adjY=1) and fallingPiece != None:
             # falling piece has landed, set it on the board
             addToBoard(board, fallingPiece)
             score += removeCompleteLines(board)
-            realScore = score
             level, fallFreq = calculateLevelAndFallFreq(score)
             fallingPiece = None
-        elif keyPress != 1 and isValidPosition(board, fallingPiece, adjY=1):
-            # piece did not land, just move the piece down
-            fallingPiece['y'] += 1
-            lastFallTime = time.time()
 
         # drawing everything on the screen
         DISPLAYSURF.fill(BGCOLOR)
@@ -267,19 +256,11 @@ def runGame(brain):
         drawStatus(score, level)
         drawNextPiece(nextPiece)
         if fallingPiece != None:
-            drawPiece(fallingPiece)
+           drawPiece(fallingPiece)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
-    return realScore - findNumOfBottomRowBlanks(board);
-
-def findNumOfBottomRowBlanks(board):
-    count = 0;
-    for rowIndex in board:
-        if(board[rowIndex][0] == '.'):
-            count = count + .1
-
-    return count
-
+    pygame.quit();
+    return realScore,count;
 
 
 def getMaxIndex(outputs):
@@ -368,7 +349,7 @@ def addToBoard(board, piece):
     for x in range(TEMPLATEWIDTH):
         for y in range(TEMPLATEHEIGHT):
             if PIECES[piece['shape']][piece['rotation']][y][x] != BLANK:
-                board[x + piece['x']][y + piece['y']] = piece['color']
+                  board[x + piece['x']][y + piece['y']] = piece['color'];
 
 
 def getBlankBoard():
@@ -500,4 +481,3 @@ if __name__ == '__main__':
     print weights
     brain = ANN(204, 10, 4, weights)
     main(brain)
-
