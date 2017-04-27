@@ -3,18 +3,23 @@
 import numpy as np
 
 class ANN(object):
-    def __init__(self, num_inputs, num_hidden_nodes, num_outputs, weights):
+    def __init__(self, num_inputs, num_hidden_nodes,num_layers, num_outputs, weights):
         self.weights = weights # this is an individual which is actually a list of weights (genome)
         # You need to extract the list of weights and put each weight into correct place in your ANN.
+        self.num_layers = num_layers;
+        self.num_hidden_nodes = num_hidden_nodes
         # Therefore ANN topology should be fixed through all generations.
-        num_hidden_weights = (num_inputs+1) * num_hidden_nodes
+        self.num_hidden_weights = (num_inputs+1) * num_hidden_nodes
+        self.num_layer_weights = (num_layers - 1) * (num_hidden_nodes+1) * num_hidden_nodes
+
         # Let's assume that you have one hidden layer, then you would end up with two matrices of weights:
         # 1) Between the input layer and the hidden layer
         # 2) Between the hidden layer and the output layer
         # Hence, place them in the following hidden and output weights variables, respectively.
         #print weights
-        self.hidden_weights = np.array(weights[:num_hidden_weights]).reshape(num_hidden_nodes,num_inputs+1)
-        self.output_weights = np.array(weights[num_hidden_weights:]).reshape(num_outputs,num_hidden_nodes+1)
+        self.hidden_weights = np.array(weights[:self.num_hidden_weights]).reshape(num_hidden_nodes,num_inputs+1)
+        self.layer_weights =  weights[self.num_hidden_weights:self.num_hidden_weights + self.num_layer_weights];
+        self.output_weights = np.array(weights[(self.num_hidden_weights + self.num_layer_weights):]).reshape(num_outputs,num_hidden_nodes+1)
     
     def activation(self,x):
         # x is the net input to the neuron (previously represented as "z" during the class)
@@ -49,7 +54,21 @@ class ANN(object):
             for j in range(len(inputs)):
                 z += self.hidden_weights[i][j] * inputs[j]
             layer.append(self.activation(z)) 
-        layer.insert(0,1)
+
+        oldLayer = layer
+        newLayer = []
+        for c in range(self.num_layers - 1):
+            oldLayer.insert(0,1)
+            newLayer = []
+            layerWeights = len(oldLayer) * (len(oldLayer)-1);
+            thisWeights = np.array(self.layer_weights[layerWeights * c:layerWeights * (c+1)]).reshape(self.num_hidden_nodes,self.num_hidden_nodes+1)
+            for i in range(len(thisWeights)):
+                z = 0
+                for j in range(len(oldLayer)):
+                    z += thisWeights[i][j] * oldLayer[j]
+                newLayer.append(self.activation(z)) 
+            oldLayer = newLayer
+        layer = oldLayer
         outputs = []
         for i in range(len(self.output_weights)):
             z = 0
@@ -59,3 +78,4 @@ class ANN(object):
 
         return outputs
         
+
