@@ -8,7 +8,7 @@ from pygame.locals import *
 from ANN import ANN
 import numpy as np
 
-FPS = 25
+FPS = 100
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
 BOXSIZE = 20
@@ -17,8 +17,8 @@ BOARDHEIGHT = 20
 BLANK = '.'
 
 SHAPES = {'S' : 0, 'Z' : 1, 'I' : 2, 'J' : 3, 'L' : 4, 'T' : 5, 'O' : 6};
-MOVESIDEWAYSFREQ = 0.15
-MOVEDOWNFREQ = 0.1
+MOVESIDEWAYSFREQ = 0.02
+MOVEDOWNFREQ = 0.02
 
 XMARGIN = int((WINDOWWIDTH - BOARDWIDTH * BOXSIZE) / 2)
 TOPMARGIN = WINDOWHEIGHT - (BOARDHEIGHT * BOXSIZE) - 5
@@ -167,16 +167,17 @@ def main(brain):
     BIGFONT = pygame.font.Font('freesansbold.ttf', 100)
     pygame.display.set_caption('Tetromino')
 
-    showTextScreen('Tetromino')
-    while True: # game loop
+    score = runGame(brain);
+    return score; 
+    #while True: # game loop
         # if random.randint(0, 1) == 0:
             # pygame.mixer.music.load('tetrisb.mid')
         # else:
             # pygame.mixer.music.load('tetrisc.mid')
         # pygame.mixer.music.play(-1, 0.0)
-        runGame(brain)
+     #   runGame(brain)
         #pygame.mixer.music.stop()
-        showTextScreen('Game Over')
+     #   showTextScreen('Game Over')
 
 
 def runGame(brain):
@@ -188,7 +189,8 @@ def runGame(brain):
     movingDown = False # note: there is no movingUp variable
     movingLeft = False
     movingRight = False
-    score = 0
+    score = 0;
+    realScore = 0;
     level, fallFreq = calculateLevelAndFallFreq(score)
 
     fallingPiece = getNewPiece()
@@ -202,75 +204,10 @@ def runGame(brain):
             lastFallTime = time.time() # reset lastFallTime
 
             # start of debugging
-            print "this is board state:\n"
-            for line in board:
-                print line
-            # end of debugging
             if not isValidPosition(board, fallingPiece):
-                return # can't fit a new piece on the board, so game over
+                return score;
         
-        checkForQuit()
-
-        for event in pygame.event.get(): # event handling loop
-            #add ann here
-            if event.type == KEYUP:
-                if (event.key == K_p):
-                    # Pausing the game
-                    DISPLAYSURF.fill(BGCOLOR)
-                    # pygame.mixer.music.stop()
-                    showTextScreen('Paused') # pause until a key press
-                    # pygame.mixer.music.play(-1, 0.0)
-                    lastFallTime = time.time()
-                    lastMoveDownTime = time.time()
-                    lastMoveSidewaysTime = time.time()
-                elif (event.key == K_LEFT or event.key == K_a):
-                    movingLeft = False
-                elif (event.key == K_RIGHT or event.key == K_d):
-                    movingRight = False
-                elif (event.key == K_DOWN or event.key == K_s):
-                    movingDown = False
-
-            elif event.type == KEYDOWN:
-
-                # moving the piece sideways
-                if (event.key == K_LEFT or event.key == K_a) and isValidPosition(board, fallingPiece, adjX=-1):
-                    fallingPiece['x'] -= 1
-                    movingLeft = True
-                    movingRight = False
-                    lastMoveSidewaysTime = time.time()
-
-                elif (event.key == K_RIGHT or event.key == K_d) and isValidPosition(board, fallingPiece, adjX=1):
-                    fallingPiece['x'] += 1
-                    movingRight = True
-                    movingLeft = False
-                    lastMoveSidewaysTime = time.time()
-
-                # rotating the piece (if there is room to rotate)
-                elif (event.key == K_UP or event.key == K_w):
-                    fallingPiece['rotation'] = (fallingPiece['rotation'] + 1) % len(PIECES[fallingPiece['shape']])
-                    if not isValidPosition(board, fallingPiece):
-                        fallingPiece['rotation'] = (fallingPiece['rotation'] - 1) % len(PIECES[fallingPiece['shape']])
-                elif (event.key == K_q): # rotate the other direction
-                    fallingPiece['rotation'] = (fallingPiece['rotation'] - 1) % len(PIECES[fallingPiece['shape']])
-                    if not isValidPosition(board, fallingPiece):
-                        fallingPiece['rotation'] = (fallingPiece['rotation'] + 1) % len(PIECES[fallingPiece['shape']])
-
-                # making the piece fall faster with the down key
-                elif (event.key == K_DOWN or event.key == K_s):
-                    movingDown = True
-                    if isValidPosition(board, fallingPiece, adjY=1):
-                        fallingPiece['y'] += 1
-                    lastMoveDownTime = time.time()
-
-                # move the current piece all the way down
-                elif event.key == K_SPACE:
-                    movingDown = False
-                    movingLeft = False
-                    movingRight = False
-                    for i in range(1, BOARDHEIGHT):
-                        if not isValidPosition(board, fallingPiece, adjY=i):
-                            break
-                    fallingPiece['y'] += i - 1
+        #checkForQuit()
 
         # handle moving the piece because of user input
         
@@ -281,8 +218,6 @@ def runGame(brain):
                     inputs.append(0);
                 else:
                     inputs.append(1);
-        print inputs
-        print len(inputs)
         outputs = brain.evaluate(inputs);
         keyPress = getMaxIndex(outputs);
         if(keyPress == 0): #move up
@@ -313,18 +248,18 @@ def runGame(brain):
             lastMoveDownTime = time.time()
 
         # let the piece fall if it is time to fall
-        if time.time() - lastFallTime > fallFreq:
             # see if the piece has landed
-            if not isValidPosition(board, fallingPiece, adjY=1):
-                # falling piece has landed, set it on the board
-                addToBoard(board, fallingPiece)
-                score += removeCompleteLines(board)
-                level, fallFreq = calculateLevelAndFallFreq(score)
-                fallingPiece = None
-            else:
-                # piece did not land, just move the piece down
-                fallingPiece['y'] += 1
-                lastFallTime = time.time()
+        if not isValidPosition(board, fallingPiece, adjY=1):
+            # falling piece has landed, set it on the board
+            addToBoard(board, fallingPiece)
+            score += removeCompleteLines(board)
+            realScore = score
+            level, fallFreq = calculateLevelAndFallFreq(score)
+            fallingPiece = None
+        elif keyPress != 1 and isValidPosition(board, fallingPiece, adjY=1):
+            # piece did not land, just move the piece down
+            fallingPiece['y'] += 1
+            lastFallTime = time.time()
 
         # drawing everything on the screen
         DISPLAYSURF.fill(BGCOLOR)
@@ -333,10 +268,9 @@ def runGame(brain):
         drawNextPiece(nextPiece)
         if fallingPiece != None:
             drawPiece(fallingPiece)
-
         pygame.display.update()
-        #print score
         FPSCLOCK.tick(FPS)
+    return realScore;
 
 
 def getMaxIndex(outputs):
@@ -557,3 +491,4 @@ if __name__ == '__main__':
     print weights
     brain = ANN(204, 10, 4, weights)
     main(brain)
+
