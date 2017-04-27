@@ -270,7 +270,16 @@ def runGame(brain):
             drawPiece(fallingPiece)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
-    return realScore;
+    return realScore - findNumOfBottomRowBlanks(board);
+
+def findNumOfBottomRowBlanks(board):
+    count = 0;
+    for rowIndex in board:
+        if(board[rowIndex][0] == '.'):
+            count = count + .1
+
+    return count
+
 
 
 def getMaxIndex(outputs):
